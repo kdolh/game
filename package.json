@@ -1,8 +1,12 @@
 {
-  "name": "Game",
+  "name": "game",
   "version": "0.0.1",
   "description": "",
-  "keywords": "fun, JYSK, game",
+  "keywords": [
+    "fun",
+    "JYSK",
+    "game"
+  ],
   "license": "",
   "author": "",
   "scripts": {
@@ -11,7 +15,20 @@
     "start": "npm run build && npm run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "staticFiles": {
+    "staticPath": [
+      {
+        "staticPath": "img",
+        "staticOutDir": "img"
+      }
+    ],
+    "watcherGlob": "**"
+  },
   "devDependencies": {
-    "parcel-bundler": "^1.12.4"
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-static-files-copy": "^2.6.0"
+  },
+  "dependencies": {
+    "p5": "^1.9.0"
   }
 }
