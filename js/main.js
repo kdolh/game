@@ -4,6 +4,7 @@ import {gameOptions} from "./gameOptions";
 import {playerOptions} from "./playerOptions";
 import {grinchOptions} from "./grinchOptions";
 import {startListening} from "./mic-analizer";
+
 let game;
 
 // Init phaser game
@@ -43,6 +44,7 @@ class playGame extends Phaser.Scene {
   }
 
   create() {
+    // init microphone altitude meter.
     startListening();
 
     // Configure grinch sprite
@@ -95,7 +97,7 @@ class playGame extends Phaser.Scene {
     // input listener
     this.input.keyboard.on("keydown", function () {
       // count player clicks and update velocity
-     playerOptions.playerVelocity = 5;
+      playerOptions.playerVelocity = 5;
     }, this);
     this.input.keyboard.on("keyup", function () {
       // count player clicks and update velocity
@@ -108,20 +110,24 @@ class playGame extends Phaser.Scene {
   update() {
     // Microphone Input
     // Handclap generates a sound level of 70-90Db
-    // if (playerOptions.micInputVolume > 70) {
-    //   playerOptions.playerVelocity = playerOptions.micInputVolume/700;
-    // } else {
-    //   playerOptions.playerVelocity = -10;
-    // }
-
+    if (playerOptions.micInputVolume > 1) {
+      let velocity = parseFloat((playerOptions.micInputVolume / 50).toFixed(2));
+      if (velocity > gameOptions.maxVelocity) {
+        velocity = gameOptions.maxVelocity;
+      }
+      playerOptions.playerVelocity = velocity;
+    } else {
+      playerOptions.playerVelocity = gameOptions.negativeVelocity;
+    }
+    // Calculations for player movement
     if (playerOptions.playerVelocity !== 0) {
-      let improvedPlayerSpeed = playerOptions.playerSpeed + (playerOptions.playerSpeed > 0 ? playerOptions.playerSpeed : 0.1) * playerOptions.playerVelocity/100;
+      let improvedPlayerSpeed = playerOptions.playerSpeed + playerOptions.playerVelocity / 100;
       if (improvedPlayerSpeed > playerOptions.maxPlayerSpeed) {
         improvedPlayerSpeed = playerOptions.maxPlayerSpeed;
       }
-      if(parseFloat(improvedPlayerSpeed.toFixed(2)) > 0) {
+      if (parseFloat(improvedPlayerSpeed.toFixed(2)) > 0) {
         playerOptions.playerSpeed = improvedPlayerSpeed;
-      }else {
+      } else {
         playerOptions.playerVelocity = 0;
         playerOptions.playerSpeed = 0.01;
       }
@@ -133,23 +139,11 @@ class playGame extends Phaser.Scene {
     // update current angle adding player speed
     this.player.currentAngle = Phaser.Math.Angle.WrapDegrees(this.player.currentAngle + playerOptions.playerSpeed);
 
-    // // set painted ratio to zero
-    // this.paintedRatio = 0;
-    //
-    // // convert Phaser angles to a more readable angles where zero is on top, 90 is right, 180 down, 270 left
-    // let currentAngle = this.getGameAngle(this.player.currentAngle);
-    // let previousAngle = this.getGameAngle(this.player.previousAngle);
-    //
-    // // if current angle is greater than previous angle...
-    // if (currentAngle >= previousAngle) {
-    //   // put in paintedArcs array a new arc
-    //   this.paintedArcs.push([previousAngle, currentAngle]);
-    // } else {
-    //   // this is the case player passed from a value less than 360 to a value greater than 360, which is zero
-    //   // we manage this case as a couple of arcs
-    //   this.paintedArcs.push([previousAngle, 360]);
-    //   this.paintedArcs.push([0, currentAngle]);
-    // }
+    // TODO: add grinch moving logic
+    this.grinch.currentAngle = Phaser.Math.Angle.WrapDegrees(this.grinch.currentAngle + grinchOptions.grinchSpeed);
+
+    // TODO add collision detection with the player
+
 
     // prepare highlightCircle graphic object to draw
     this.highlightCircle.clear();
