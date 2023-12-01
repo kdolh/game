@@ -1,11 +1,10 @@
-// import MicrophoneAltitudeMeter from './mic-analizer.js';
-// import {PlayGame as MicrophoneAltitudeMeter} from "./scenes/playGame";
 import {gameOptions} from "./gameOptions";
 import {playerOptions} from "./playerOptions";
 import {grinchOptions} from "./grinchOptions";
 import {startListening} from "./mic-analizer";
+import Snowfall from "./snow";
 
-let game;
+let game, snow;
 
 // Init phaser game
 window.onload = function () {
@@ -17,8 +16,17 @@ window.onload = function () {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
       parent: "game-holder",
-      width: 800,
-      height: 800
+      width: 1600,
+      height: 1200
+    },
+    physics: {
+      default: 'arcade',
+      arcade: {
+        gravity: {
+          x: 0,
+          y: 0
+        }
+      }
     },
     scene: playGame,
     micAltitude: 0,
@@ -34,20 +42,36 @@ class playGame extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("grass", "img/kisspng-earth-globe.png");
+    this.load.image("snowflake", "img/snowflake.png");
+    this.load.image("snow", "img/snow-planet.png");
     this.load.image("player", "img/nisse.png");
+
     // load grinch spritesheet
     this.load.spritesheet("grinch", "img/grinch.png", {
       frameWidth: 59,
       frameHeight: 88
     });
+    this.load.spritesheet("grinch-catch", "img/grinch-catch.png", {
+      frameWidth: 93,
+      frameHeight: 133
+    });
   }
 
   create() {
+    snow = new Snowfall(this);
+
+    // Initialize wind direction
+    snow.changeWindDirection();
+
+    // Start emitting snowflakes
+    snow.startEmitters();
+
+
     // init microphone altitude meter.
     startListening();
+    // Create a scene.
 
-    // Configure grinch sprite
+    // Grinch walk animation
     this.anims.create({
       key: "walk",
       frames: this.anims.generateFrameNumbers("grinch", {
@@ -58,14 +82,20 @@ class playGame extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
-
-    // Get reference to the microphone and calculate the microphone altitude using vanilla js
-
-    // array to store all painted arcs
-    this.paintedArcs = [];
+    // Grinch catch animation
+    this.anims.create({
+      key: "catch",
+      frames: this.anims.generateFrameNumbers("grinch-catch", {
+        start: 0,
+        end: 16,
+        first: 0
+      }),
+      frameRate: 10,
+      repeat: 0,
+    });
 
     // calculate the distance from the center of the canvas and the big circle
-    this.distanceFromCenter = gameOptions.bigCircleRadius + playerOptions.playerRadius - gameOptions.bigCircleThickness;
+    this.distanceFromCenter = gameOptions.bigCircleRadius + playerOptions.radius - gameOptions.bigCircleThickness;
 
     // == Circle ==
     // draw the big circle
@@ -74,11 +104,10 @@ class playGame extends Phaser.Scene {
     this.bigCircle.strokeCircle(game.config.width / 2, game.config.height / 2, gameOptions.bigCircleRadius);
 
     // add a grass image to the center of the circle
-    this.grass = this.add.sprite(game.config.width / 2, game.config.height / 2, "grass");
-    this.grass.setOrigin(0.5);
+    this.planet = this.add.sprite(game.config.width / 2, game.config.height / 2, "snow");
+    this.planet.setOrigin(0.5);
+    this.planet.setScale(0.8);
 
-    // graphics object where to draw the highlight circle
-    this.highlightCircle = this.add.graphics();
     // == End Circle ==
 
     // == Player ==
@@ -90,86 +119,75 @@ class playGame extends Phaser.Scene {
     // add grinch sprite
     this.grinch = this.initGameCharacters("grinch");
     this.grinch.play("walk");
+    this.grinch.body.onOverlap = true;
+    this.grinch.setScale(2);
     // == End Grinch ==
 
+    // == Collision ==
+    this.physics.add.overlap(this.player, this.grinch, this.collider, null, this);
+    // == End Collision ==
 
     // todo: Temporaty solution, replace with mic input
     // input listener
     this.input.keyboard.on("keydown", function () {
       // count player clicks and update velocity
-      playerOptions.playerVelocity = 5;
+      if (!gameOptions.stopListening) {
+        playerOptions.velocity = 5;
+      }
     }, this);
     this.input.keyboard.on("keyup", function () {
       // count player clicks and update velocity
-      playerOptions.playerVelocity = -5;
+      if (!gameOptions.stopListening) {
+        playerOptions.velocity = -5;
+      }
     }, this);
-
   }
 
-
   update() {
+    snow.update();
     // Microphone Input
-    // Handclap generates a sound level of 70-90Db
-    if (playerOptions.micInputVolume > 1) {
+    // Handclap generates a sound level of 60-90Db
+    if (playerOptions.micInputVolume > gameOptions.minMicInputVolume) {
       let velocity = parseFloat((playerOptions.micInputVolume / 50).toFixed(2));
       if (velocity > gameOptions.maxVelocity) {
         velocity = gameOptions.maxVelocity;
       }
-      playerOptions.playerVelocity = velocity;
+      playerOptions.velocity = velocity;
     } else {
-      playerOptions.playerVelocity = gameOptions.negativeVelocity;
+      playerOptions.velocity = playerOptions.negativeVelocity;
+    }
+    // If collision is detected, stop listening to input.
+    if (gameOptions.stopListening) {
+      playerOptions.velocity = 0;
+      playerOptions.speed = 0;
     }
     // Calculations for player movement
-    if (playerOptions.playerVelocity !== 0) {
-      let improvedPlayerSpeed = playerOptions.playerSpeed + playerOptions.playerVelocity / 100;
+    if (playerOptions.velocity !== 0) {
+      let improvedPlayerSpeed = playerOptions.speed + playerOptions.velocity / 100;
       if (improvedPlayerSpeed > playerOptions.maxPlayerSpeed) {
         improvedPlayerSpeed = playerOptions.maxPlayerSpeed;
       }
       if (parseFloat(improvedPlayerSpeed.toFixed(2)) > 0) {
-        playerOptions.playerSpeed = improvedPlayerSpeed;
+        playerOptions.speed = improvedPlayerSpeed;
       } else {
-        playerOptions.playerVelocity = 0;
-        playerOptions.playerSpeed = 0.01;
+        playerOptions.velocity = 0;
+        playerOptions.speed = 0.01;
       }
+    }
+    if (playerOptions.speed > playerOptions.basicSpeed) {
+      // Update grinch speed
+      // Todo: update grinch speed logic.
+      grinchOptions.speed = playerOptions.speed + grinchOptions.velocity;
+    } else {
+      grinchOptions.speed = !gameOptions.stopListening ? grinchOptions.basicSpeed : 0;
     }
 
     // update previous angle to current angle
     this.player.previousAngle = this.player.currentAngle;
 
     // update current angle adding player speed
-    this.player.currentAngle = Phaser.Math.Angle.WrapDegrees(this.player.currentAngle + playerOptions.playerSpeed);
-
-    // TODO: add grinch moving logic
-    this.grinch.currentAngle = Phaser.Math.Angle.WrapDegrees(this.grinch.currentAngle + grinchOptions.grinchSpeed);
-
-    // TODO add collision detection with the player
-
-
-    // prepare highlightCircle graphic object to draw
-    this.highlightCircle.clear();
-    this.highlightCircle.color = gameOptions.color.highlightCircle;
-    this.highlightCircle.lineStyle(gameOptions.bigCircleThickness, this.highlightCircle.color);
-
-    // merge small arcs into bigger arcs, if possible
-    this.paintedArcs = this.mergeIntervals(this.paintedArcs);
-
-    // loop through all arcs
-    this.paintedArcs.forEach(function (i) {
-
-      // increase painted ratio value with arc length
-      this.paintedRatio += (i[1] - i[0]);
-
-      // draw the arc
-      this.highlightCircle.beginPath();
-      this.highlightCircle.arc(game.config.width / 2, game.config.height / 2, gameOptions.bigCircleRadius, Phaser.Math.DegToRad(i[0] - 90), Phaser.Math.DegToRad(i[1] - 90), false);
-      this.highlightCircle.strokePath();
-    }.bind(this));
-
-    // convert the sum of all arcs lenght into a 0 -> 100 value
-    this.paintedRatio = Math.round(this.paintedRatio * 100 / 360);
-
-    // update player progress text
-    // this.levelText.setText(this.paintedRatio + "%");
+    this.player.currentAngle = Phaser.Math.Angle.WrapDegrees(this.player.currentAngle + playerOptions.speed);
+    this.grinch.currentAngle = Phaser.Math.Angle.WrapDegrees(this.grinch.currentAngle + grinchOptions.speed);
 
     // Rotate and place player sprite.
     this.rotateGameCharacter(this.player);
@@ -178,16 +196,32 @@ class playGame extends Phaser.Scene {
     this.rotateGameCharacter(this.grinch);
   }
 
+  /**
+   * Collision between player and grinch
+   * @param player
+   * @param grinch
+   */
+  collider(player, grinch) {
+    gameOptions.stopListening = true;
+    player.disableBody(true, true);
+    grinch.play("catch");
+  }
+
+  /**
+   * Init game characters
+   * @param type
+   * @returns {*}
+   */
   initGameCharacters(type) {
-    let character = this.add.sprite(game.config.width / 2, game.config.height / 2 + this.distanceFromCenter, type);
+    let character = this.physics.add.sprite(game.config.width / 2, game.config.height / 2 + this.distanceFromCenter, type);
     let config = playerOptions;
     if (type === "grinch") {
       config = grinchOptions;
     }
 
     if (type === "player") {
-      character.displayWidth = config.playerRadius * 2;
-      character.displayHeight = config.playerRadius * 2;
+      character.displayWidth = config.radius * 2;
+      character.displayHeight = config.radius * 2;
     }
     // player current angle, on top of the big circle
     character.currentAngle = config.baseAngle;
@@ -196,6 +230,10 @@ class playGame extends Phaser.Scene {
     return character;
   }
 
+  /**
+   * Rotate game character
+   * @param character
+   */
   rotateGameCharacter(character) {
     // transform degrees to radians
     let radians = Phaser.Math.DegToRad(character.currentAngle);
@@ -207,41 +245,5 @@ class playGame extends Phaser.Scene {
     character.x = game.config.width / 2 + distanceFromCenter * Math.cos(radians);
     character.y = (game.config.height / 2) + distanceFromCenter * Math.sin(radians);
     character.angle = 90 + character.currentAngle;
-  }
-
-// method to convert Phaser angles to a more readable angles
-  getGameAngle(angle) {
-    let gameAngle = angle + 90;
-    if (gameAngle < 0) {
-      gameAngle = 360 + gameAngle
-    }
-    return gameAngle;
-  }
-
-  // method to merge intervals, found at
-  // https://gist.github.com/vrachieru/5649bce26004d8a4682b
-  mergeIntervals(intervals) {
-    if (intervals.length <= 1) {
-      return intervals;
-    }
-    let stack = [];
-    let top = null;
-    intervals = intervals.sort(function (a, b) {
-      return a[0] - b[0]
-    });
-    stack.push(intervals[0]);
-    for (let i = 1; i < intervals.length; i++) {
-      top = stack[stack.length - 1];
-      if (top[1] < intervals[i][0]) {
-        stack.push(intervals[i]);
-      } else {
-        if (top[1] < intervals[i][1]) {
-          top[1] = intervals[i][1];
-          stack.pop();
-          stack.push(top);
-        }
-      }
-    }
-    return stack;
   }
 }

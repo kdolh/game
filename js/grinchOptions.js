@@ -1,15 +1,16 @@
 export let grinchOptions = {
   // radius of the grinch, in pixels
-  grinchRadius: 40,
+  radius: 40,
 
-  // gravity of the grinch, in pixels per frame per frame
-  grinchGravity: 0.5,
+  // gravity of the grinch, in pixels per frame
+  gravity: 0.5,
 
   // grinch speed, in degrees per frame
-  grinchSpeed: 0.3,
+  speed: 0.1,
+  basicSpeed: 0.1,
 
   // grinch velocity
-  grinchVelocity: 0,
+  velocity: 0.1,
 
   // base angle
   baseAngle: 220,

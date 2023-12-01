@@ -1,18 +1,16 @@
 export let playerOptions = {
   // radius of the player, in pixels
-  playerRadius: 40,
+  radius: 40,
 
   // gravity of the player, in pixels per frame per frame
-  playerGravity: 0.5,
+  gravity: 0.5,
 
   // player speed, in degrees per frame
-  // todo: Should be taken from mic input
-  playerSpeed: 0.01,
-  playerBasicSpeed: 0.3,
+  speed: 0.09,
+  basicSpeed: 0.3,
   maxPlayerSpeed: 2,
 
-  //todo: temp player velocity
-  playerVelocity: 0,
+  velocity: 0,
   maxVelocity: 100,
   negativeVelocity: -10,
 
