@@ -16,7 +16,7 @@ export default class Snowfall {
     });
 
     // mid emitter
-    this.mid_emitter = game.add.particles(0, -132, 'snowflake', {
+    this.mid_emitter = game.add.particles(0, -32, 'snowflake', {
       x: {min: 0, max: width * 1.5,},
       quantity: [0, 1, 2, 3, 4, 5],
       gravity: 0,
@@ -28,7 +28,7 @@ export default class Snowfall {
       lifespan: 10000,
     });
 
-    this.front_emitter = game.add.particles(0, -132, 'snowflake', {
+    this.front_emitter = game.add.particles(0, -32, 'snowflake', {
       x: {min: 0, max: width * 1.5,},
       quantity: [0, 1, 2, 3, 4, 5],
       gravity: 0,

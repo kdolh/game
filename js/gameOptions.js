@@ -8,9 +8,9 @@ export let gameOptions = {
   // world gravity
   worldGravity: 0.8,
 
-  maxVelocity: 10000,
+  maxVelocity: 100,
 
-  minMicInputVolume: 40,
+  minMicInputVolume: 8,
 
   stopListening: false,
 

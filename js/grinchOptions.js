@@ -6,11 +6,11 @@ export let grinchOptions = {
   gravity: 0.5,
 
   // grinch speed, in degrees per frame
-  speed: 0.1,
-  basicSpeed: 0.1,
+  speed: 0.05,
+  basicSpeed: 0.05,
 
   // grinch velocity
-  velocity: 0.1,
+  velocity: 0.007,
 
   // base angle
   baseAngle: 220,

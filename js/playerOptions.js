@@ -8,13 +8,13 @@ export let playerOptions = {
   // player speed, in degrees per frame
   speed: 0.09,
   basicSpeed: 0.3,
-  maxPlayerSpeed: 2,
+  maxPlayerSpeed: 5,
 
   velocity: 0,
   maxVelocity: 100,
   negativeVelocity: -10,
 
-  baseAngle: -90,
+  baseAngle: 270,
 
   micInputVolume: 0,
 

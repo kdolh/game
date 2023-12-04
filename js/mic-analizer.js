@@ -32,7 +32,6 @@ export function startListening() {
           }
 
           playerOptions.micInputVolume = values / length;
-          // console.debug(playerOptions.micInputVolume);
 
         } // end fn stream
       },
