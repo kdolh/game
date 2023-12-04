@@ -1,7 +1,7 @@
-import {gameOptions} from "./gameOptions";
-import PlayGame from "./playGame";
-import Start from "./start";
-import {startListening} from "./mic-analizer";
+import {gameOptions} from "./options/gameOptions";
+import PlayGame from "./scene/playGame";
+import Start from "./scene/start";
+import {startListening} from "./libs/mic-analizer";
 
 // Init phaser game
 window.onload = function () {
